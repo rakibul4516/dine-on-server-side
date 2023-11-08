@@ -142,8 +142,20 @@ async function run() {
             res.send(result)
         })
 
+        //Get method for my order foods
+        app.get('/api/v1/myorders', async (req, res) => {
+            const userEmail = req.query.email;
+            // const jwtEmail = req.user.email;
+            // if(userEmail!==jwtEmail){
+            //     return res.status(403).send({message:'Forbidden Access'})
+            // }
+            const query = { buyerEmail: userEmail }
 
-
+            const cursor = ordersDatabase.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+      
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
