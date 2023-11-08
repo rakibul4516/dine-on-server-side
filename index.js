@@ -161,6 +161,25 @@ async function run() {
 
 
 
+        //Get method using query
+        app.get('/api/v1/foods', async (req, res) => {
+            const userEmail = req.query.email;
+            const query = { userEmail: userEmail }
+
+            const cursor = foodsDatabase.find(query)
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+        
+        //Get and Put method for update foods
+        app.get('/api/v1/allfoods/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            console.log(query)
+            const result = await foodsDatabase.findOne(query);
+            res.send(result)
+        })
+
 
 
         // Send a ping to confirm a successful connection
