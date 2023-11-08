@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:5173','https://dineon-aa210.web.app/'],
+    origin: ['http://localhost:5173','https://dine-on-server.vercel.app'],
     credentials: true
 }));
 app.use(express.json());
@@ -74,6 +74,28 @@ async function run() {
         app.post('/api/v1/foods', async (req, res) => {
             const food = req.body;
             const result = await foodsDatabase.insertOne(food)
+            res.send(result)
+        })
+        //Patch method for update orders count
+        app.put('/api/v1/foods/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const modifyData = req.body;
+            const foods = {
+                $set: {
+                    orders: modifyData.orders,
+                    quantity: modifyData.quantity,
+                    foodName: modifyData.foodName,
+                    image: modifyData.image,
+                    category: modifyData.category,
+                    price: modifyData.price,
+                    origin: modifyData.origin,
+                    desc: modifyData.desc
+                }
+            };
+            const result = await foodsDatabase.updateOne(filter, foods, options)
             res.send(result)
         })
 
