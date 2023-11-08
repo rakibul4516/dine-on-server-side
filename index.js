@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:5173','https://dine-on-server.vercel.app'],
+    origin: ['http://localhost:5173'],
     credentials: true
 }));
 app.use(express.json());
@@ -98,6 +98,50 @@ async function run() {
             const result = await foodsDatabase.updateOne(filter, foods, options)
             res.send(result)
         })
+
+
+        //Post method for add foods
+        app.post('/api/v1/users', async (req, res) => {
+            const user = req.body;
+            // const userEmail = req.body.email;
+            // const jwtEmail = req.user.email;
+            // if(userEmail!==jwtEmail){
+            //     return res.status(403).send({message:'Forbidden Access'})
+            // }
+            const result = await usersDatabase.insertOne(user)
+            res.send(result)
+        })
+
+        //Get method for foods
+        app.get('/api/v1/allfoods', async (req, res) => {
+            //sorting data 
+
+            //search functionality 
+            const searchFood = req.query.search;
+            const regex = new RegExp(searchFood, 'i');
+            //Pagination 
+            const page = Number(req.query.page)
+            const limit = Number(req.query.limit)
+            const skip = page * limit
+
+            const cursor = foodsDatabase.find({ foodName: { $regex: regex } }).skip(skip).limit(limit);
+            const result = await cursor.toArray()
+            res.send(result)
+        })
+        // //Get method for foods
+        app.get('/api/v1/countdata', async (req, res) => {
+            const count = await foodsDatabase.estimatedDocumentCount();
+            res.send({ count })
+        })
+
+        //Post method to get ordered foods
+
+        app.post('/api/v1/orders', async (req, res) => {
+            const order = req.body;
+            const result = await ordersDatabase.insertOne(order)
+            res.send(result)
+        })
+
 
 
 
