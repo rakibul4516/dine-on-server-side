@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const port = process.env.PORT || 5000;
 
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['https://dineon-aa210.web.app'],
     credentials: true
 }));
 app.use(express.json());
@@ -24,7 +24,7 @@ const verifyToken = (req,res,next) =>{
         if(err){
             return res.status(401).send({message:'unauthorized access'})
         }
-        res.user = decoded;
+        req.user = decoded;
         next()
     })
 }
@@ -103,11 +103,6 @@ async function run() {
         //Post method for add foods
         app.post('/api/v1/users', async (req, res) => {
             const user = req.body;
-            // const userEmail = req.body.email;
-            // const jwtEmail = req.user.email;
-            // if(userEmail!==jwtEmail){
-            //     return res.status(403).send({message:'Forbidden Access'})
-            // }
             const result = await usersDatabase.insertOne(user)
             res.send(result)
         })
@@ -143,19 +138,30 @@ async function run() {
         })
 
         //Get method for my order foods
-        app.get('/api/v1/myorders', async (req, res) => {
+        app.get('/api/v1/myorders',verifyToken, async (req, res) => {
             const userEmail = req.query.email;
-            // const jwtEmail = req.user.email;
-            // if(userEmail!==jwtEmail){
-            //     return res.status(403).send({message:'Forbidden Access'})
-            // }
+            const jwtEmail = req.user.email;
+            if(userEmail!==jwtEmail){
+                return res.status(403).send({message:'Forbidden Access'})
+            }
             const query = { buyerEmail: userEmail }
 
             const cursor = ordersDatabase.find(query)
             const result = await cursor.toArray()
             res.send(result)
         })
-      
+        
+        //Delete my orders
+        app.delete('/api/v1/myorders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await ordersDatabase.deleteOne(query)
+            res.send(result)
+        })
+
+
+
+
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
