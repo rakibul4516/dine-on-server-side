@@ -70,8 +70,59 @@ async function run() {
         })
         
 
+        //Post method for add foods
+        app.post('/api/v1/foods', async (req, res) => {
+            const food = req.body;
+            const result = await foodsDatabase.insertOne(food)
+            res.send(result)
+        })
+        //Patch method for update orders count
+        app.put('/api/v1/foods/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const modifyData = req.body;
+            const foods = {
+                $set: {
+                    orders: modifyData.orders,
+                    quantity: modifyData.quantity,
+                    foodName: modifyData.foodName,
+                    image: modifyData.image,
+                    category: modifyData.category,
+                    price: modifyData.price,
+                    origin: modifyData.origin,
+                    desc: modifyData.desc
+                }
+            };
+            const result = await foodsDatabase.updateOne(filter, foods, options)
+            res.send(result)
+        })
 
 
+        //Post method for add foods
+        app.post('/api/v1/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersDatabase.insertOne(user)
+            res.send(result)
+        })
+
+        //Get method for foods
+        app.get('/api/v1/allfoods', async (req, res) => {
+            //sorting data 
+
+            //search functionality 
+            const searchFood = req.query.search;
+            const regex = new RegExp(searchFood, 'i');
+            //Pagination 
+            const page = Number(req.query.page)
+            const limit = Number(req.query.limit)
+            const skip = page * limit
+
+            const cursor = foodsDatabase.find({ foodName: { $regex: regex } }).skip(skip).limit(limit);
+            const result = await cursor.toArray()
+            res.send(result)
+        })
 
 
         // Send a ping to confirm a successful connection
