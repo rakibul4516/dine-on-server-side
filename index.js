@@ -15,14 +15,14 @@ app.use(express.json());
 app.use(cookieParser())
 
 // token verify
-const verifyToken = (req,res,next) =>{
+const verifyToken = (req, res, next) => {
     const token = req?.cookies?.token;
-    if(!token){
-        return res.status(401).send({message:'unauthorized access'})
+    if (!token) {
+        return res.status(401).send({ message: 'unauthorized access' })
     }
-    jwt.verify(token,process.env.JWT_SECRET_KEY,(err,decoded)=>{
-        if(err){
-            return res.status(401).send({message:'unauthorized access'})
+    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ message: 'unauthorized access' })
         }
         req.user = decoded;
         next()
@@ -56,19 +56,19 @@ async function run() {
             const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
             console.log(token)
             res.cookie('token', token, {
-                    httpOnly: true,
-                    secure: true,
-                    sameSite: 'none'
-                })
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none'
+            })
                 .send({ success: true })
         })
 
-        app.post('/api/v1/logout',async(req,res)=>{
+        app.post('/api/v1/logout', async (req, res) => {
             const user = req.body;
-            console.log('logout user',user)
-            res.clearCookie('token',{maxAge:0}).send({success:true})
+            console.log('logout user', user)
+            res.clearCookie('token', { maxAge: 0 }).send({ success: true })
         })
-        
+
 
         //Post method for add foods
         app.post('/api/v1/foods', async (req, res) => {
@@ -109,17 +109,24 @@ async function run() {
 
         //Get method for foods
         app.get('/api/v1/allfoods', async (req, res) => {
-            //sorting data 
+            const query = {};
 
-            //search functionality 
-            const searchFood = req.query.search;
-            const regex = new RegExp(searchFood, 'i');
             //Pagination 
             const page = Number(req.query.page)
             const limit = Number(req.query.limit)
             const skip = page * limit
+            // Use category functionality
+            const category = req.query.category;
+            if (category) {
+                query.category = category;
+            }
+            // Use search functionality
+            const searchFood = req.query.search;
+            if (searchFood) {
+                query.foodName = { $regex: new RegExp(searchFood, 'i') };
+            }
 
-            const cursor = foodsDatabase.find({ foodName: { $regex: regex } }).skip(skip).limit(limit);
+            const cursor = foodsDatabase.find(query).skip(skip).limit(limit);
             const result = await cursor.toArray()
             res.send(result)
         })
@@ -138,11 +145,11 @@ async function run() {
         })
 
         //Get method for my order foods
-        app.get('/api/v1/myorders',verifyToken, async (req, res) => {
+        app.get('/api/v1/myorders', verifyToken, async (req, res) => {
             const userEmail = req.query.email;
             const jwtEmail = req.user.email;
-            if(userEmail!==jwtEmail){
-                return res.status(403).send({message:'Forbidden Access'})
+            if (userEmail !== jwtEmail) {
+                return res.status(403).send({ message: 'Forbidden Access' })
             }
             const query = { buyerEmail: userEmail }
 
@@ -150,7 +157,7 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
         })
-        
+
         //Delete my orders
         app.delete('/api/v1/myorders/:id', async (req, res) => {
             const id = req.params.id;
@@ -170,7 +177,7 @@ async function run() {
             const result = await cursor.toArray()
             res.send(result)
         })
-        
+
         //Get and Put method for update foods
         app.get('/api/v1/allfoods/:id', async (req, res) => {
             const id = req.params.id;
