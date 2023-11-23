@@ -5,6 +5,7 @@ require('dotenv').config()
 const cors = require('cors');
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser');
+const stripe = require('stripe')(process.env.STRIPE_PAYMENT_SECRET)
 const port = process.env.PORT || 5000;
 
 app.use(cors({
@@ -52,9 +53,7 @@ async function run() {
 
         app.post('/api/v1/jwt', async (req, res) => {
             const user = req.body
-            console.log(user)
             const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: '1h' })
-            console.log(token)
             res.cookie('token', token, {
                 httpOnly: true,
                 secure: true,
@@ -65,7 +64,6 @@ async function run() {
 
         app.post('/api/v1/logout', async (req, res) => {
             const user = req.body;
-            console.log('logout user', user)
             res.clearCookie('token', { maxAge: 0 }).send({ success: true })
         })
 
@@ -79,7 +77,6 @@ async function run() {
         //Patch method for update orders count
         app.put('/api/v1/foods/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id)
             const filter = { _id: new ObjectId(id) };
             const options = { upsert: true };
             const modifyData = req.body;
@@ -158,6 +155,24 @@ async function run() {
             res.send(result)
         })
 
+        //Use Payment method by Post 
+        app.post('/api/v1/create-payment-intent',async(req,res)=>{
+            const {totalPrice} = req.body;
+            const amount = parseInt(totalPrice * 100);
+            if(amount<1){
+                return
+            }
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types:['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+
         //Delete my orders
         app.delete('/api/v1/myorders/:id', async (req, res) => {
             const id = req.params.id;
@@ -182,7 +197,6 @@ async function run() {
         app.get('/api/v1/allfoods/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
-            console.log(query)
             const result = await foodsDatabase.findOne(query);
             res.send(result)
         })
